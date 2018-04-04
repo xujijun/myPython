@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import jieba
 import re
+import pandas as pd
+import numpy as np
 
 
 def read_from_file(file_name):
@@ -32,20 +34,30 @@ def clean_words(raw_words, stopwords_path):
     # print(words)
 
     word_list = words.split()
-    # print(word_list)
+    word_df = pd.DataFrame({'word': word_list})
 
     # 过滤掉语气词等无关词
-    stopwords = open(stopwords_path, "r", encoding="utf-8").read()
-    stopwords = stopwords.split()
-    # print(stopwords)
-    for word in word_list:
-        if word in stopwords:
-            # print("word to be removed: ", word)
-            word_list.remove(word)
+    stopwords_df = pd.read_csv(stopwords_path, names=['stopWord'])
+    word_df = word_df[~word_df.word.isin(stopwords_df.stopWord)]
+    print("word_df:\n", word_df)
+
+    # stopwords = open(stopwords_path, "r", encoding="utf-8").read()
+    # stopwords = stopwords.split()
+    # print("stopwords: \n", stopwords)
+    # for word in word_list:
+    #    if word in stopwords:
+    #        print("word to be removed: ", word)
+    #        word_list.remove(word)
     # print(word_list)
 
-    words = " ".join(word_list)
-    print(words)
+    # 统计：
+    words_stat = word_df.groupby(by=['word'])['word'].agg({"计数": np.size})
+    words_stat = words_stat.reset_index().sort_values(by=["计数"], ascending=False)
+    print("words_stat:\n", words_stat.head(n=20))
+
+    # 拼装为text：
+    words = " ".join(word_df['word'].tolist())  # " ".join(word_list)
+    print("words:\n", words)
     return words
 
 
